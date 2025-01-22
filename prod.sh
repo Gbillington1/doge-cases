@@ -9,9 +9,6 @@ fi
 export FLASK_ENV=production
 export FLASK_APP=server:app
 
-# Create logs directory if it doesn't exist
-mkdir -p logs
-
 # Start Gunicorn
 gunicorn \
     --bind 0.0.0.0:8000 \
