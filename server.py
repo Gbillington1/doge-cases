@@ -1,13 +1,31 @@
 from flask import Flask, render_template, request, abort
 from flask_apscheduler import APScheduler
+from flask_cors import CORS
 from app.services.court_listener import CourtListenerService
 from config import Config
-import functools
+import functools, logging
+from logging.handlers import RotatingFileHandler
 
-app = Flask(__name__, 
-           template_folder='app/templates',  # Set the template folder
-           static_folder='app/static')       # Set the static folder
+app = Flask(__name__, template_folder='app/templates',  static_folder='app/static')       
 app.config.from_object(Config)
+
+# setup logging
+if app.config['FLASK_ENV'] == 'production':
+    file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    app.logger.addHandler(file_handler)
+else:
+    logging.basicConfig(level=logging.DEBUG)
+
+# setup CORS
+if app.config['FLASK_ENV'] == 'production':
+    CORS(app, resources={r"/*": {"origins": "https://infrmlabs.com"}})
+else:
+    CORS(app)
+
+# setup scheduler
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
@@ -43,11 +61,11 @@ def webhook():
     return '', 200
 
 # Run update at 6 AM and 6 PM every day
-@scheduler.task('cron', id='update_cases', hour='12', minute='42', second='10')
-def scheduled_update():
-    with app.app_context():
-        print("Running scheduled update...")
-        court_listener_service.refresh_cases()
+# @scheduler.task('cron', id='update_cases', hour='12', minute='42', second='10')
+# def scheduled_update():
+#     with app.app_context():
+#         print("Running scheduled update...")
+#         court_listener_service.refresh_cases()
 
 if __name__ == '__main__':
     app.run(debug=True) 

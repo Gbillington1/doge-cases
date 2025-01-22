@@ -17,3 +17,10 @@ Thumbs.db
 data/ 
 
 node_modules/
+
+# Logs
+logs/
+*.log
+
+# Services
+*.service
